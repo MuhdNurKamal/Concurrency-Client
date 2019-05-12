@@ -1,11 +1,19 @@
 import asyncio
 import time
 import aiohttp
+import motor.motor_asyncio
+
+mongo_uri = 'mongodb://127.0.0.1:27017'
+motor_client = motor.motor_asyncio.AsyncIOMotorClient(mongo_uri)
+db = motor_client['test']
+collection = db['testing']
 
 
 async def download_site(session, url):
     async with session.get(url) as response:
-        print("Read {0} from {1}".format(response.content_length, url))
+        text = await response.text()
+        result = await collection.insert_one({text: text})
+        print('result %s' % repr(result.inserted_id))
 
 
 async def download_all_sites(sites):
@@ -19,8 +27,8 @@ async def download_all_sites(sites):
 
 if __name__ == "__main__":
     sites = [
-        "http://localhost:5000",
-    ] * 100000
+                "http://localhost:5000",
+            ] * 150000
     start_time = time.time()
     asyncio.get_event_loop().run_until_complete(download_all_sites(sites))
     duration = time.time() - start_time
